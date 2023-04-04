@@ -26,4 +26,4 @@ open System
 
 let _ =
     WebServer.Start()
-    Console.ReadLine ()
+    Console.ReadLine()

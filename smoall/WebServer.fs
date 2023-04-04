@@ -28,30 +28,30 @@ open System.Text
 open System.Threading
 open Log
 
-type Server() =
+type Server () =
 
     /// Set up a semaphore that waits for a specified number of simultaneously allowed connections:
-    static let MAX_SIMULTANEOUS_CONNECTION: int = 20
+    static let MAX_SIMULTANEOUS_CONNECTION : int = 20
 
-    static let semaphore: Semaphore =
+    static let semaphore : Semaphore =
         new Semaphore(MAX_SIMULTANEOUS_CONNECTION, MAX_SIMULTANEOUS_CONNECTION)
 
 
     /// Returns list of IP addresses assigned to localhost network devices,
     /// such as hardwired ethernet, wireless, etc:
-    static member private GetLocalHostIPs() : array<IPAddress> =
-        let host: IPHostEntry = Dns.GetHostEntry(Dns.GetHostName())
+    static member private GetLocalHostIPs () : array<IPAddress> =
+        let host : IPHostEntry = Dns.GetHostEntry(Dns.GetHostName())
 
         Array.filter
-            (fun (ip: IPAddress) ->
+            (fun (ip : IPAddress) ->
                 match ip.AddressFamily with
                 | AddressFamily.InterNetwork -> true
                 | _ -> false)
             host.AddressList
 
     /// Instantiate the HttpListener and add the localhost prefixes
-    static member private InitializeListener(localHostIPs: array<IPAddress>) : HttpListener =
-        let listener: HttpListener = new HttpListener() in
+    static member private InitializeListener (localHostIPs : array<IPAddress>) : HttpListener =
+        let listener : HttpListener = new HttpListener() in
         listener.Prefixes.Add("http://localhost/")
 
         // Listen to IP address as well:
@@ -65,19 +65,19 @@ type Server() =
         listener
 
     /// Begin listening to connections on a separate worker thread.
-    static member private Start(listener: HttpListener) : Unit =
+    static member private Start (listener : HttpListener) : Unit =
         listener.Start()
         Tasks.Task.Run(fun () -> Server.RunServer listener) |> ignore
 
     /// Start awaiting for connections, up to the "maxSimultaneousConnections" value
     /// This code runs in a separate thread
-    static member private RunServer(listener: HttpListener) : Unit =
+    static member private RunServer (listener : HttpListener) : Unit =
         while true do
             semaphore.WaitOne() |> ignore
             Server.StartConnectionListener(listener) |> Async.RunSynchronously
 
     /// Await connections.
-    static member private StartConnectionListener(listener: HttpListener) : Async<unit> =
+    static member private StartConnectionListener (listener : HttpListener) : Async<unit> =
         async {
             // Wait for a connection. Return to caller while we wait.
             let! context = listener.GetContextAsync() |> Async.AwaitTask
@@ -86,15 +86,15 @@ type Server() =
             semaphore.Release() |> ignore
 
             // We have a connection, do something...
-            let response: array<byte> = "Hello Smoall!" |> Encoding.UTF8.GetBytes
+            let response : array<byte> = "Hello Smoall!" |> Encoding.UTF8.GetBytes
             context.Response.ContentLength64 <- response.Length
             context.Response.OutputStream.Write(response, 0, response.Length)
             context.Response.OutputStream.Close()
         }
 
-    static member public Start() =
-        let localHostIPs: array<IPAddress> = Server.GetLocalHostIPs()
-        let listener: HttpListener = Server.InitializeListener localHostIPs
+    static member public Start () =
+        let localHostIPs : array<IPAddress> = Server.GetLocalHostIPs()
+        let listener : HttpListener = Server.InitializeListener localHostIPs
         Server.Start listener
 
 let Start = Server.Start

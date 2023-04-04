@@ -30,17 +30,17 @@ module Logger =
 
     [<Interface>]
     type T =
-        abstract member Info: String -> Unit
-        abstract member Warn: String -> Unit
-        abstract member Error: String -> Unit
-        abstract member Debug: String -> Unit
+        abstract member Info : String -> Unit
+        abstract member Warn : String -> Unit
+        abstract member Error : String -> Unit
+        abstract member Debug : String -> Unit
 
     type Console private () =
 
-        static let self: Console = Console()
+        static let self : Console = Console()
 
         /// Output logs with additional colors, the output will be locked
-        static member private log (color: ConsoleColor) (s: String) : Unit =
+        static member private log (color : ConsoleColor) (s : String) : Unit =
             let consoleLogOutputLock = obj ()
 
             lock consoleLogOutputLock (fun _ ->
@@ -69,24 +69,24 @@ type LogTarget =
 
 type Log private () =
 
-    static let mutable TARGET: LogTarget = Console
+    static let mutable TARGET : LogTarget = Console
 
-    static member Info(message: String) : Unit =
+    static member Info (message : String) : Unit =
         match TARGET with
         | File -> failwith "Unsupported log target"
         | Console -> Logger.Console.Info message
 
-    static member Debug(message: String) : Unit =
+    static member Debug (message : String) : Unit =
         match TARGET with
         | File -> failwith "Unsupported log target"
         | Console -> Logger.Console.Debug message
 
-    static member Warn(message: String) : Unit =
+    static member Warn (message : String) : Unit =
         match TARGET with
         | File -> failwith "Unsupported log target"
         | Console -> Logger.Console.Warn message
 
-    static member Error(message: String) : Unit =
+    static member Error (message : String) : Unit =
         match TARGET with
         | File -> failwith "Unsupported log target"
         | Console -> Logger.Console.Error message
