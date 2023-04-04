@@ -23,7 +23,10 @@
 module smoall.Program
 
 open System
+open Log
 
 let _ =
-    WebServer.Start()
-    Console.ReadLine()
+    try
+        WebServer.Start()
+        Console.ReadLine() |> ignore
+    with e -> Log.Error (e.ToString ())

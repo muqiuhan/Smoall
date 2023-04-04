@@ -85,12 +85,23 @@ type Server () =
             // Release the semaphore so that another listener can be immediately started up.
             semaphore.Release() |> ignore
 
-            // We have a connection, do something...
+            Server.LogRequests context.Request
+
             let response : array<byte> = "Hello Smoall!" |> Encoding.UTF8.GetBytes
             context.Response.ContentLength64 <- response.Length
             context.Response.OutputStream.Write(response, 0, response.Length)
             context.Response.OutputStream.Close()
         }
+
+    static member private LogRequests (request : HttpListenerRequest) : unit =
+        let remoteEndPoint = request.RemoteEndPoint
+        let httpMethod = request.HttpMethod
+
+        let path =
+            request.Url.AbsoluteUri.IndexOf $"{request.Url.Host}" + request.Url.Host.Length
+            |> request.Url.AbsoluteUri.Substring
+
+        Log.Info $"{remoteEndPoint} {httpMethod} {path}"
 
     static member public Start () =
         let localHostIPs : array<IPAddress> = Server.GetLocalHostIPs()

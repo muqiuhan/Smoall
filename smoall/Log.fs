@@ -44,12 +44,11 @@ module Logger =
             let consoleLogOutputLock = obj ()
 
             lock consoleLogOutputLock (fun _ ->
-                Console.ForegroundColor <- ConsoleColor.White
-                printf $"""{(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))}"""
                 Console.ForegroundColor <- color
-                printf " > "
-                Console.ResetColor()
-                printfn $"{s}")
+                printf $"""{(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))} > """
+                Console.ForegroundColor <- ConsoleColor.White
+                printfn $"{s}"
+                Console.ResetColor())
 
         interface T with
             member this.Info s = Console.log ConsoleColor.Green s
