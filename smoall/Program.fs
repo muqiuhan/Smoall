@@ -26,7 +26,12 @@ open System
 open Log
 
 let _ =
+    Log.Info "Smoall started"
+    
     try
         WebServer.Start()
         Console.ReadLine() |> ignore
-    with e -> Log.Error (e.ToString ())
+    with e ->
+        Log.Error(e.ToString())
+    
+    Log.Info "Smoall closed"

@@ -22,16 +22,22 @@
 
 module smoall.WebServer
 
+open System
 open System.Net
 open System.Net.Sockets
 open System.Text
 open System.Threading
-open Log
 
-type Server () =
+open Log
+open Router
+open WebSite
+
+type WebServer () =
 
     /// Set up a semaphore that waits for a specified number of simultaneously allowed connections:
     static let MAX_SIMULTANEOUS_CONNECTION : int = 20
+
+    static let router : Router = Router()
 
     static let semaphore : Semaphore =
         new Semaphore(MAX_SIMULTANEOUS_CONNECTION, MAX_SIMULTANEOUS_CONNECTION)
@@ -67,14 +73,14 @@ type Server () =
     /// Begin listening to connections on a separate worker thread.
     static member private Start (listener : HttpListener) : Unit =
         listener.Start()
-        Tasks.Task.Run(fun () -> Server.RunServer listener) |> ignore
+        Tasks.Task.Run(fun () -> WebServer.RunServer listener) |> ignore
 
     /// Start awaiting for connections, up to the "maxSimultaneousConnections" value
     /// This code runs in a separate thread
     static member private RunServer (listener : HttpListener) : Unit =
         while true do
             semaphore.WaitOne() |> ignore
-            Server.StartConnectionListener(listener) |> Async.RunSynchronously
+            WebServer.StartConnectionListener(listener) |> Async.RunSynchronously
 
     /// Await connections.
     static member private StartConnectionListener (listener : HttpListener) : Async<unit> =
@@ -85,7 +91,10 @@ type Server () =
             // Release the semaphore so that another listener can be immediately started up.
             semaphore.Release() |> ignore
 
-            Server.LogRequests context.Request
+            // Router
+            // router.Route(context.Request)
+
+            WebServer.LogRequests context.Request
 
             let response : array<byte> = "Hello Smoall!" |> Encoding.UTF8.GetBytes
             context.Response.ContentLength64 <- response.Length
@@ -103,9 +112,12 @@ type Server () =
 
         Log.Info $"{remoteEndPoint} {httpMethod} {path}"
 
-    static member public Start () =
-        let localHostIPs : array<IPAddress> = Server.GetLocalHostIPs()
-        let listener : HttpListener = Server.InitializeListener localHostIPs
-        Server.Start listener
+    static member public Start (websitePath : String) : Unit =
+        let localHostIPs : array<IPAddress> = WebServer.GetLocalHostIPs()
+        let listener : HttpListener = WebServer.InitializeListener localHostIPs
+        router.websitePath <- websitePath
+        WebServer.Start listener
 
-let Start = Server.Start
+let Start () =
+    Log.Info $"Start WebSite on {WebSite.DefaultPath}"
+    WebServer.Start WebSite.DefaultPath
