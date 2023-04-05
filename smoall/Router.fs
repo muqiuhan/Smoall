@@ -1,0 +1,148 @@
+/// The MIT License (MIT)
+///
+/// Copyright (c) 2022 Muqiu Han
+///
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+///
+/// The above copyright notice and this permission notice shall be included in all
+/// copies or substantial portions of the Software.
+///
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+/// SOFTWARE.
+
+module smoall.Router
+
+open System
+open System.IO
+open System.Net
+open System.Text
+open Exception
+
+type ExtensionInfo (Loader : String -> String -> ExtensionInfo -> ResponsePaket, ContentType : String) =
+
+    member public this.ContentType : String = ContentType
+
+    member public this.Loader : String -> String -> ExtensionInfo -> ResponsePaket = Loader
+
+
+and ResponsePaket () =
+
+    [<DefaultValue>]
+    val mutable public Redirect : String
+
+    [<DefaultValue>]
+    val mutable public Data : byte[]
+
+    [<DefaultValue>]
+    val mutable public ContentType : String
+
+    [<DefaultValue>]
+    val mutable public Encoding : Encoding
+
+type Router () =
+
+    [<DefaultValue>]
+    val mutable public websitePath : String
+
+    member private this.extensionFolderMap : list<String * ExtensionInfo> =
+        [ ("ico", ExtensionInfo(this.ImageLoader, "image/ico"))
+          ("png", ExtensionInfo(this.ImageLoader, "image/png"))
+          ("jpg", ExtensionInfo(this.ImageLoader, "image/jpg"))
+          ("gif", ExtensionInfo(this.ImageLoader, "image/gif"))
+          ("bmp", ExtensionInfo(this.ImageLoader, "image/bmp"))
+          ("html", ExtensionInfo(this.FileLoader, "text/html"))
+          ("", ExtensionInfo(this.FileLoader, "text/html"))
+          ("css", ExtensionInfo(this.FileLoader, "text/css"))
+          ("javascript", ExtensionInfo(this.FileLoader, "text/javascript")) ]
+
+
+
+    /// Read in an image file and returns a ResponsePacket with the raw data.
+    member private this.ImageLoader
+        (fullPath : String)
+        (extension : String)
+        (extensionInfo : ExtensionInfo)
+        : ResponsePaket =
+        let stream : FileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read)
+        let binaryReader : BinaryReader = new BinaryReader(stream)
+        let image : ResponsePaket = ResponsePaket()
+
+        image.Data <- binaryReader.ReadBytes(int stream.Length)
+        image.ContentType <- extensionInfo.ContentType
+
+        stream.Close()
+        binaryReader.Close()
+
+        image
+
+    /// Read in what is basically a text file and return a ResponsePacket with the text UTF8 encoded
+    member private this.FileLoader
+        (fullPath : String)
+        (extension : String)
+        (extensionInfo : ExtensionInfo)
+        : ResponsePaket =
+
+        let file : ResponsePaket = ResponsePaket()
+
+        file.Data <- Encoding.UTF8.GetBytes(File.ReadAllText(fullPath))
+        file.ContentType <- extensionInfo.ContentType
+        file.Encoding <- Encoding.UTF8
+
+        file
+
+    /// Load an HTML file, taking into account missing extensions and a file-less IP/domain.
+    /// which should default to index.html.
+    member private this.PageLoader
+        (fullPath : String)
+        (extension : String)
+        (extensionInfo : ExtensionInfo)
+        : ResponsePaket =
+
+        let page : ResponsePaket = ResponsePaket()
+
+        if fullPath = this.websitePath then
+            this._Route "GET" "/index.html" String.Empty
+        else
+            let fullPath = ref fullPath
+
+            if String.IsNullOrEmpty extension then
+                fullPath.Value <- fullPath.Value + ".html"
+
+
+            fullPath.Value <-
+                Path.Combine
+                    [| this.websitePath
+                       "Pages"
+                       fullPath.Value.Substring((fullPath.Value.IndexOf this.websitePath) + this.websitePath.Length) |]
+
+            this.FileLoader fullPath.Value extension extensionInfo
+
+    member public this.Route (request : HttpListenerRequest) : ResponsePaket =
+        // Only the path, not any of the parameters
+        let path : String = request.RawUrl.Remove(request.RawUrl.IndexOf("?"))
+        let httpMethod : String = request.HttpMethod
+        let parameters : String = request.RawUrl.Substring(request.RawUrl.IndexOf("?") + 1)
+        this._Route path httpMethod parameters
+
+    member private this._Route (path : String) (httpMethod : String) (parameters : String) : ResponsePaket =
+        let extension : String = path.Substring((path.IndexOf ".") + 1)
+
+        try
+            let _, extensionInfo =
+                List.find (fun (ext, info) -> ext = extension) this.extensionFolderMap
+
+            let fullPath : String = Path.Combine [| this.websitePath; path |]
+
+            extensionInfo.Loader fullPath extension extensionInfo
+        with :? Collections.Generic.KeyNotFoundException ->
+            raise (SmoallException(UnsupportedFileType extension))

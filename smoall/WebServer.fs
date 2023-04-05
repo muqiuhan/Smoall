@@ -92,7 +92,7 @@ type WebServer () =
             semaphore.Release() |> ignore
 
             // Router
-            // router.Route(context.Request)
+            WebServer.Respond context.Response (router.Route(context.Request))
 
             WebServer.LogRequests context.Request
 
@@ -101,6 +101,16 @@ type WebServer () =
             context.Response.OutputStream.Write(response, 0, response.Length)
             context.Response.OutputStream.Close()
         }
+
+    static member private Respond (response : HttpListenerResponse) (responsePaket : ResponsePaket) : Unit =
+        response.ContentType <- responsePaket.ContentType
+        response.ContentLength64 <- responsePaket.Data.Length
+        response.ContentEncoding <- responsePaket.Encoding
+        response.StatusCode <- int HttpStatusCode.OK
+
+        response.OutputStream.Write(responsePaket.Data, 0, responsePaket.Data.Length)
+        response.OutputStream.Close()
+
 
     static member private LogRequests (request : HttpListenerRequest) : unit =
         let remoteEndPoint = request.RemoteEndPoint

@@ -22,10 +22,13 @@
 
 module smoall.Exception
 
-type T = ExecutableFileLocation of string
+type T =
+    | ExecutableFileLocation of string
+    | UnsupportedFileType of string
 
 exception SmoallException of T
 
 let to_string =
     function
     | ExecutableFileLocation path -> $"smoall executable file location exception: {path}"
+    | UnsupportedFileType extension -> $"Unsupported file type : {extension}"
