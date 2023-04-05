@@ -1,4 +1,4 @@
-﻿/// The MIT License (MIT)
+/// The MIT License (MIT)
 ///
 /// Copyright (c) 2022 Muqiu Han
 ///
@@ -20,18 +20,12 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 /// SOFTWARE.
 
-module smoall.Program
+module smoall.Exception
 
-open System
-open Log
+type T = ExecutableFileLocation of string
 
-let _ =
-    Log.Info "Smoall started"
+exception SmoallException of T
 
-    try
-        WebServer.Start()
-        Console.ReadLine() |> ignore
-    with e ->
-        Log.Error(e.ToString())
-
-    Log.Info "Smoall closed"
+let to_string =
+    function
+    | ExecutableFileLocation path -> $"smoall executable file location exception: {path}"

@@ -34,12 +34,13 @@ type WebSite () =
 
     static member public PATH : String = WebSite.DefaultPath
 
-    static member DefaultPath: String =
+    static member DefaultPath : String =
         let path : Ref<String> = ref EXECUTION_PATH
-        
+
         while (Path.GetFileName path.Value) <> "smoall" do
-            path.Value <- (Path.GetDirectoryName path.Value)
             if path.Value = "/" then
-                raise (ExecutableFileLocationException EXECUTION_PATH)
+                raise (SmoallException(ExecutableFileLocation EXECUTION_PATH))
+
+            path.Value <- (Path.GetDirectoryName path.Value)
 
         path.Value
