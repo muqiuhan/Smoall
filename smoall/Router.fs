@@ -26,8 +26,10 @@ open System
 open System.IO
 open System.Net
 open System.Text
+
 open Exception
 open Log
+open WebSite
 
 type ExtensionInfo (Loader : String -> String -> ExtensionInfo -> ResponsePaket, ContentType : String) =
 
@@ -64,7 +66,7 @@ type Router () =
           ("html", ExtensionInfo(this.PageLoader, "text/html"))
           (String.Empty, ExtensionInfo(this.PageLoader, "text/html"))
           ("css", ExtensionInfo(this.FileLoader, "text/css"))
-          ("javascript", ExtensionInfo(this.FileLoader, "text/javascript")) ]
+          ("js", ExtensionInfo(this.FileLoader, "text/javascript")) ]
 
 
 
@@ -80,7 +82,7 @@ type Router () =
         let binaryReader : BinaryReader = new BinaryReader(stream)
         let image : ResponsePaket = ResponsePaket()
 
-        image.Data <- binaryReader.ReadBytes(int stream.Length)
+        image.Data <- WebSite.LoadImage fullPath
         image.ContentType <- extensionInfo.ContentType
 
         stream.Close()
@@ -95,10 +97,8 @@ type Router () =
         (extensionInfo : ExtensionInfo)
         : ResponsePaket =
         let file : ResponsePaket = ResponsePaket()
-        let fullPath : String = $"{this.websitePath}{Path.DirectorySeparatorChar}{fullPath}"
 
-        Log.Info $"Load file : {fullPath}"
-        file.Data <- Encoding.UTF8.GetBytes(File.ReadAllText(fullPath))
+        file.Data <- WebSite.LoadFile fullPath
         file.ContentType <- extensionInfo.ContentType
         file.Encoding <- Encoding.UTF8
 
@@ -115,16 +115,17 @@ type Router () =
         Log.Info $"Load page : {fullPath}"
 
         if fullPath = "/" then
-            this._Route "index.html" "GET" String.Empty
+            this._Route $"/index.html" "GET" String.Empty
 
         else
-            let fullPath = ref fullPath
+            let fullPath : String ref = ref fullPath
 
             if String.IsNullOrEmpty extension then
                 fullPath.Value <- fullPath.Value + ".html"
 
-            fullPath.Value <- $"pages{fullPath.Value}"
-            this.FileLoader fullPath.Value extension extensionInfo
+            let fullPath : String = $"{Path.DirectorySeparatorChar}pages{fullPath.Value}"
+
+            this.FileLoader fullPath extension extensionInfo
 
     member public this.Route (request : HttpListenerRequest) : ResponsePaket =
         let path : String ref = ref request.RawUrl
@@ -141,7 +142,7 @@ type Router () =
         let extension : String ref = ref String.Empty
 
         if path.IndexOf "." <> -1 then
-            extension.Value <- path.Substring(path.IndexOf "." + 1)
+            extension.Value <- (Path.GetExtension path).Substring 1
 
         let extension : String = extension.Value
 
@@ -149,8 +150,6 @@ type Router () =
             let (_, extensionInfo : ExtensionInfo) =
                 List.find (fun (ext : String, _) -> ext = extension) this.extensionFolderMap
 
-            let fullPath : String = Path.Combine [| this.websitePath; path |]
-
-            extensionInfo.Loader fullPath extension extensionInfo
+            extensionInfo.Loader path extension extensionInfo
         with :? Collections.Generic.KeyNotFoundException ->
             raise (SmoallException(UnsupportedFileType extension))

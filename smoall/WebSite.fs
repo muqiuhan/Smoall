@@ -22,11 +22,13 @@
 
 module smoall.WebSite
 
-open System.IO
 open System
+open System.IO
 open System.Reflection
+open System.Text
 
 open Exception
+open Log
 
 type WebSite () =
 
@@ -44,3 +46,22 @@ type WebSite () =
             path.Value <- (Path.GetDirectoryName path.Value)
 
         Path.Combine [| path.Value; "WebSite" |]
+
+    static member public LoadFile (path : String) : byte[] =
+        let fullPath : String = WebSite.PATH + path
+
+        Log.Debug $"Load file : {fullPath}"
+        Encoding.UTF8.GetBytes(File.ReadAllText(fullPath))
+
+    static member public LoadImage (path : String) : byte[] =
+        let fullPath : String = WebSite.PATH + path
+        let stream : FileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read)
+        let binaryReader : BinaryReader = new BinaryReader(stream)
+
+        Log.Debug $"Load image: {fullPath}"
+        let image = binaryReader.ReadBytes(int stream.Length)
+
+        stream.Close()
+        binaryReader.Close()
+
+        image

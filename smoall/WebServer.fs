@@ -84,16 +84,19 @@ type WebServer () =
     /// Await connections.
     static member private StartConnectionListener (listener : HttpListener) : Async<unit> =
         async {
-            // Wait for a connection. Return to caller while we wait.
-            let! context = listener.GetContextAsync() |> Async.AwaitTask
+            try
+                // Wait for a connection. Return to caller while we wait.
+                let! context = listener.GetContextAsync() |> Async.AwaitTask
 
-            // Release the semaphore so that another listener can be immediately started up.
-            semaphore.Release() |> ignore
+                // Release the semaphore so that another listener can be immediately started up.
+                semaphore.Release() |> ignore
 
-            // Router
-            WebServer.Respond context.Response (router.Route(context.Request))
+                // Router
+                WebServer.Respond context.Response (router.Route(context.Request))
 
-            WebServer.LogRequests context.Request
+                WebServer.LogRequests context.Request
+            with e ->
+                Log.Error(e.ToString())
         }
 
     static member private Respond (response : HttpListenerResponse) (responsePaket : ResponsePaket) : Unit =
