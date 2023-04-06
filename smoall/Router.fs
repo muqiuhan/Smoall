@@ -68,9 +68,8 @@ type Router () =
           ("css", ExtensionInfo(this.FileLoader, "text/css"))
           ("js", ExtensionInfo(this.FileLoader, "text/javascript")) ]
 
-
-
     /// Read in an image file and returns a ResponsePacket with the raw data.
+    /// FIXME: Could not find file '/favicon.ico'
     member private this.ImageLoader
         (fullPath : String)
         (extension : String)

@@ -21,6 +21,25 @@ Smoall is a Minimal, Fast, and Smooth F# Web Server, Mainly for the fun of it, I
 
 > May require root privileges to run (should be administrator privileges on Windows)
 
+If you need to package it into a single-file executable program:
+```
+dotnet publish -c Release \                                                                                   
+               -r linux-x64 \
+               --self-contained true \
+               -p:PublishSingleFile=true \
+               -p:IncludeNativeLibrariesForSelfExtract=true
+```
+
+This project has enabled .NET Native AOT optimization by default, which can be turned off in [smoall/smoall.fsproj](./smoall/smoall.fsproj):
+```xml
+<PropertyGroup>
+    ...
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>true</PublishTrimmed>
+    ...
+</PropertyGroup>
+```
+
 ## Documents
 Everything is slowly being perfected...
 
