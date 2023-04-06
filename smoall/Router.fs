@@ -27,6 +27,7 @@ open System.IO
 open System.Net
 open System.Text
 open Exception
+open Log
 
 type ExtensionInfo (Loader : String -> String -> ExtensionInfo -> ResponsePaket, ContentType : String) =
 
@@ -60,8 +61,8 @@ type Router () =
           ("jpg", ExtensionInfo(this.ImageLoader, "image/jpg"))
           ("gif", ExtensionInfo(this.ImageLoader, "image/gif"))
           ("bmp", ExtensionInfo(this.ImageLoader, "image/bmp"))
-          ("html", ExtensionInfo(this.FileLoader, "text/html"))
-          ("", ExtensionInfo(this.FileLoader, "text/html"))
+          ("html", ExtensionInfo(this.PageLoader, "text/html"))
+          (String.Empty, ExtensionInfo(this.PageLoader, "text/html"))
           ("css", ExtensionInfo(this.FileLoader, "text/css"))
           ("javascript", ExtensionInfo(this.FileLoader, "text/javascript")) ]
 
@@ -73,6 +74,8 @@ type Router () =
         (extension : String)
         (extensionInfo : ExtensionInfo)
         : ResponsePaket =
+
+        Log.Info $"Load image: {fullPath}"
         let stream : FileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read)
         let binaryReader : BinaryReader = new BinaryReader(stream)
         let image : ResponsePaket = ResponsePaket()
@@ -91,9 +94,10 @@ type Router () =
         (extension : String)
         (extensionInfo : ExtensionInfo)
         : ResponsePaket =
-
         let file : ResponsePaket = ResponsePaket()
+        let fullPath : String = $"{this.websitePath}{Path.DirectorySeparatorChar}{fullPath}"
 
+        Log.Info $"Load file : {fullPath}"
         file.Data <- Encoding.UTF8.GetBytes(File.ReadAllText(fullPath))
         file.ContentType <- extensionInfo.ContentType
         file.Encoding <- Encoding.UTF8
@@ -108,38 +112,42 @@ type Router () =
         (extensionInfo : ExtensionInfo)
         : ResponsePaket =
 
-        let page : ResponsePaket = ResponsePaket()
+        Log.Info $"Load page : {fullPath}"
 
-        if fullPath = this.websitePath then
-            this._Route "GET" "/index.html" String.Empty
+        if fullPath = "/" then
+            this._Route "index.html" "GET" String.Empty
+
         else
             let fullPath = ref fullPath
 
             if String.IsNullOrEmpty extension then
                 fullPath.Value <- fullPath.Value + ".html"
 
-
-            fullPath.Value <-
-                Path.Combine
-                    [| this.websitePath
-                       "Pages"
-                       fullPath.Value.Substring((fullPath.Value.IndexOf this.websitePath) + this.websitePath.Length) |]
-
+            fullPath.Value <- $"pages{fullPath.Value}"
             this.FileLoader fullPath.Value extension extensionInfo
 
     member public this.Route (request : HttpListenerRequest) : ResponsePaket =
-        // Only the path, not any of the parameters
-        let path : String = request.RawUrl.Remove(request.RawUrl.IndexOf("?"))
+        let path : String ref = ref request.RawUrl
+        let parameters : String ref = ref String.Empty
+
+        if request.RawUrl.IndexOf("?") <> -1 then
+            path.Value <- request.RawUrl.Remove(request.RawUrl.IndexOf("?"))
+            parameters.Value <- request.RawUrl.Substring(request.RawUrl.IndexOf("?") + 1)
+
         let httpMethod : String = request.HttpMethod
-        let parameters : String = request.RawUrl.Substring(request.RawUrl.IndexOf("?") + 1)
-        this._Route path httpMethod parameters
+        this._Route path.Value httpMethod parameters.Value
 
     member private this._Route (path : String) (httpMethod : String) (parameters : String) : ResponsePaket =
-        let extension : String = path.Substring((path.IndexOf ".") + 1)
+        let extension : String ref = ref String.Empty
+
+        if path.IndexOf "." <> -1 then
+            extension.Value <- path.Substring(path.IndexOf "." + 1)
+
+        let extension : String = extension.Value
 
         try
-            let _, extensionInfo =
-                List.find (fun (ext, info) -> ext = extension) this.extensionFolderMap
+            let (_, extensionInfo : ExtensionInfo) =
+                List.find (fun (ext : String, _) -> ext = extension) this.extensionFolderMap
 
             let fullPath : String = Path.Combine [| this.websitePath; path |]
 

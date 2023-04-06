@@ -43,4 +43,4 @@ type WebSite () =
 
             path.Value <- (Path.GetDirectoryName path.Value)
 
-        path.Value
+        Path.Combine [| path.Value; "WebSite" |]

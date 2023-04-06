@@ -25,7 +25,6 @@ module smoall.WebServer
 open System
 open System.Net
 open System.Net.Sockets
-open System.Text
 open System.Threading
 
 open Log
@@ -95,11 +94,6 @@ type WebServer () =
             WebServer.Respond context.Response (router.Route(context.Request))
 
             WebServer.LogRequests context.Request
-
-            let response : array<byte> = "Hello Smoall!" |> Encoding.UTF8.GetBytes
-            context.Response.ContentLength64 <- response.Length
-            context.Response.OutputStream.Write(response, 0, response.Length)
-            context.Response.OutputStream.Close()
         }
 
     static member private Respond (response : HttpListenerResponse) (responsePaket : ResponsePaket) : Unit =
