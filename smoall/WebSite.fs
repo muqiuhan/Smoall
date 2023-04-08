@@ -47,11 +47,14 @@ type WebSite () =
 
         Path.Combine [| path.Value; "WebSite" |]
 
-    static member public LoadFile (path : String) : byte[] =
-        let fullPath : String = WebSite.PATH + path
+    static member public LoadFile (path : String) : Result<byte[], ExternalError> =
+        try
+            let fullPath : String = WebSite.PATH + path
 
-        Log.Debug $"Load file : {fullPath}"
-        Encoding.UTF8.GetBytes(File.ReadAllText(fullPath))
+            Log.Debug $"Load file : {fullPath}"
+            Ok(Encoding.UTF8.GetBytes(File.ReadAllText(fullPath)))
+        with :? FileNotFoundException ->
+            Error(FileNotFound path)
 
     static member public LoadImage (path : String) : byte[] =
         let fullPath : String = WebSite.PATH + path

@@ -25,7 +25,6 @@ module smoall.Exception
 open System
 
 type ExternalError =
-    | OK
     | ExpiredSession
     | NotAuthorized
     | FileNotFound of String
@@ -40,7 +39,6 @@ module Error =
         | ExternalError of ExternalError
         | InternalError of InternalError
 
-
         member public this.ToString : String =
             match this with
             | ExternalError server_error ->
@@ -53,4 +51,4 @@ module Error =
 
         member public this.Raise () = failwith this.ToString
 
-type SmoallException = Error.T
+type SmoallException = Option<Error.T>
