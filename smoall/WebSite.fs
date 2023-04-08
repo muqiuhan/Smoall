@@ -41,7 +41,7 @@ type WebSite () =
 
         while (Path.GetFileName path.Value) <> "smoall" do
             if path.Value = "/" then
-                raise (SmoallException(ExecutableFileLocation EXECUTION_PATH))
+                (Error.InternalError(ExecutableFileLocation EXECUTION_PATH)).Raise()
 
             path.Value <- (Path.GetDirectoryName path.Value)
 

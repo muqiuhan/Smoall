@@ -38,7 +38,7 @@ type ExtensionInfo (Loader : String -> String -> ExtensionInfo -> ResponsePaket,
     member public this.Loader : String -> String -> ExtensionInfo -> ResponsePaket = Loader
 
 
-and ResponsePaket () =
+and ResponsePaket (init_error : SmoallException) =
 
     [<DefaultValue>]
     val mutable public Redirect : String
@@ -51,6 +51,15 @@ and ResponsePaket () =
 
     [<DefaultValue>]
     val mutable public Encoding : Encoding
+
+    let mutable error : SmoallException = init_error
+
+    member this.Error
+        with public get () = error
+        and public set (err : SmoallException) = error <- err
+
+    public new () = ResponsePaket()
+
 
 type Router () =
 
@@ -151,4 +160,8 @@ type Router () =
 
             extensionInfo.Loader path extension extensionInfo
         with :? Collections.Generic.KeyNotFoundException ->
-            raise (SmoallException(UnsupportedFileType extension))
+            let error : SmoallException =
+                SmoallException.ExternalError(UnsupportedFileType extension)
+
+            Log.Info(error.ToString)
+            new ResponsePaket(error)

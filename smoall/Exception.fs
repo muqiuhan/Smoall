@@ -22,13 +22,35 @@
 
 module smoall.Exception
 
-type T =
-    | ExecutableFileLocation of string
-    | UnsupportedFileType of string
+open System
 
-exception SmoallException of T
+type ExternalError =
+    | OK
+    | ExpiredSession
+    | NotAuthorized
+    | FileNotFound of String
+    | PageNotFound of String
+    | ServerError of String
+    | UnsupportedFileType of String
 
-let to_string =
-    function
-    | ExecutableFileLocation path -> $"smoall executable file location exception: {path}"
-    | UnsupportedFileType extension -> $"Unsupported file type : {extension}"
+and InternalError = ExecutableFileLocation of String
+
+module Error =
+    type T =
+        | ExternalError of ExternalError
+        | InternalError of InternalError
+
+
+        member public this.ToString : String =
+            match this with
+            | ExternalError server_error ->
+                match server_error with
+                | UnsupportedFileType extension -> $"Unsupported file type : {extension}"
+                | e -> e.ToString()
+            | InternalError internal_error ->
+                match internal_error with
+                | ExecutableFileLocation path -> $"smoall executable file location exception: {path}"
+
+        member public this.Raise () = failwith this.ToString
+
+type SmoallException = Error.T
