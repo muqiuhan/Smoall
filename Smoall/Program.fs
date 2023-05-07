@@ -1,4 +1,4 @@
-/// The MIT License (MIT)
+﻿/// The MIT License (MIT)
 ///
 /// Copyright (c) 2022 Muqiu Han
 ///
@@ -20,35 +20,6 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 /// SOFTWARE.
 
-module smoall.Exception
+module Smoall.Program
 
-open System
-
-type ExternalError =
-    | ExpiredSession
-    | NotAuthorized
-    | FileNotFound of String
-    | PageNotFound of String
-    | ServerError of String
-    | UnsupportedFileType of String
-
-and InternalError = ExecutableFileLocation of String
-
-module Error =
-    type T =
-        | ExternalError of ExternalError
-        | InternalError of InternalError
-
-        member public this.ToString : String =
-            match this with
-            | ExternalError server_error ->
-                match server_error with
-                | UnsupportedFileType extension -> $"Unsupported file type : {extension}"
-                | e -> e.ToString()
-            | InternalError internal_error ->
-                match internal_error with
-                | ExecutableFileLocation path -> $"smoall executable file location exception: {path}"
-
-        member public this.Raise () = failwith this.ToString
-
-type SmoallException = Option<Error.T>
+let _ = ()

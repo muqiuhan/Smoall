@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "smoall", "smoall\smoall.fsproj", "{FF44C3F7-8EB0-4572-84BC-E2F806BA1E49}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Smoall", "Smoall\Smoall.fsproj", "{FF44C3F7-8EB0-4572-84BC-E2F806BA1E49}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "smoall.Tests", "smoall.Tests\smoall.Tests.fsproj", "{8C96F993-2FBE-48A3-9998-D22C4409D515}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Smoall.Tests", "Smoall.Tests\Smoall.Tests.fsproj", "{8C96F993-2FBE-48A3-9998-D22C4409D515}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

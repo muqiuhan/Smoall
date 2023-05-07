@@ -6,12 +6,6 @@
     <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Exception.fs" />
-    <Compile Include="Log.fs" />
-    <Compile Include="HttpListener.fs" />
-    <Compile Include="WebSite.fs" />
-    <Compile Include="Router.fs" />
-    <Compile Include="WebServer.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>
